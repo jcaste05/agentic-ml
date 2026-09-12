@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# agentic-ml research output
+agentic_ml_runs/
+
 # C extensions
 *.so
 

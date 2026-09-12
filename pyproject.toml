@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-ml"
+version = "0.1.0"
+description = "An agentic framework that solves machine learning tasks by letting LLM agents research, generate and evaluate real training code."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = ["machine-learning", "agents", "automl", "regression", "llm"]
+authors = [{ name = "agentic-ml contributors" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "joblib>=1.3",
+]
+
+[project.optional-dependencies]
+# Only needed to RUN research (the LLM agent). The exported production model is light
+# and depends solely on the base dependencies above. This does NOT pin a model provider:
+# add the matching `strands-agents[<provider>]` extra yourself (see README).
+research = ["strands-agents>=1.0", "strands-agents-tools"]
+
+[project.urls]
+Homepage = "https://github.com/agentic-ml/agentic-ml"
+Repository = "https://github.com/agentic-ml/agentic-ml"
+Changelog = "https://github.com/agentic-ml/agentic-ml/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+# `strands-agents[gemini]` here pins the provider used by this repo's own tests/notebooks;
+# it is not part of the published `research` extra (see README > Installation).
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "ipykernel",
+    "python-dotenv>=1.0",
+    "strands-agents[gemini]>=1.0"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_ml"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+exclude = [
+    ".venv",
+    "build",
+    "dist",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".tox",
+    "tests",
+    "docs",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W", "N"]
+# X / y are the conventional names for feature matrices and targets in ML.
+ignore = ["N803", "N806"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=long"
+filterwarnings = []
