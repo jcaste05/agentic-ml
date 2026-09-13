@@ -8,64 +8,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "agentic-ml"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "joblib" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "scikit-learn" },
-]
-
-[package.optional-dependencies]
-research = [
-    { name = "strands-agents" },
-    { name = "strands-agents-tools" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "mkdocs-gen-files" },
-    { name = "mkdocs-jupyter" },
-    { name = "mkdocs-literate-nav" },
-    { name = "mkdocs-material" },
-    { name = "mkdocs-section-index" },
-    { name = "mkdocstrings", extra = ["python"] },
-    { name = "pytest" },
-    { name = "python-dotenv" },
-    { name = "ruff" },
-    { name = "strands-agents", extra = ["gemini"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "joblib", specifier = ">=1.3" },
-    { name = "numpy", specifier = ">=1.26" },
-    { name = "pandas", specifier = ">=2.0" },
-    { name = "scikit-learn", specifier = ">=1.3" },
-    { name = "strands-agents", marker = "extra == 'research'", specifier = ">=1.0" },
-    { name = "strands-agents-tools", marker = "extra == 'research'" },
-]
-provides-extras = ["research"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel" },
-    { name = "mkdocs-gen-files" },
-    { name = "mkdocs-jupyter" },
-    { name = "mkdocs-literate-nav" },
-    { name = "mkdocs-material" },
-    { name = "mkdocs-section-index" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0,<2.0" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "ruff", specifier = ">=0.6" },
-    { name = "strands-agents", extras = ["gemini"], specifier = ">=1.0" },
-]
-
-[[package]]
 name = "aiohappyeyeballs"
 version = "2.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -680,6 +622,64 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ef/4c/5dd1d8af08107f88c7f741ead7a40854b8ac24ddf9ae850afbcf698aa552/ipython_pygments_lexers-1.1.1.tar.gz", hash = "sha256:09c0138009e56b6854f9535736f4171d855c8c08a563a0dcd8022f78355c7e81", size = 8393, upload-time = "2025-01-17T11:24:34.505Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/33/1f075bf72b0b747cb3288d011319aaf64083cf2efef8354174e3ed4540e2/ipython_pygments_lexers-1.1.1-py3-none-any.whl", hash = "sha256:a9462224a505ade19a605f71f8fa63c2048833ce50abc86768a0d81d876dc81c", size = 8074, upload-time = "2025-01-17T11:24:33.271Z" },
+]
+
+[[package]]
+name = "jcaste05-agentic-ml"
+version = "0.1.1"
+source = { editable = "." }
+dependencies = [
+    { name = "joblib" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "scikit-learn" },
+]
+
+[package.optional-dependencies]
+research = [
+    { name = "strands-agents" },
+    { name = "strands-agents-tools" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+    { name = "mkdocs-gen-files" },
+    { name = "mkdocs-jupyter" },
+    { name = "mkdocs-literate-nav" },
+    { name = "mkdocs-material" },
+    { name = "mkdocs-section-index" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "pytest" },
+    { name = "python-dotenv" },
+    { name = "ruff" },
+    { name = "strands-agents", extra = ["gemini"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "joblib", specifier = ">=1.3" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "pandas", specifier = ">=2.0" },
+    { name = "scikit-learn", specifier = ">=1.3" },
+    { name = "strands-agents", marker = "extra == 'research'", specifier = ">=1.0" },
+    { name = "strands-agents-tools", marker = "extra == 'research'" },
+]
+provides-extras = ["research"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel" },
+    { name = "mkdocs-gen-files" },
+    { name = "mkdocs-jupyter" },
+    { name = "mkdocs-literate-nav" },
+    { name = "mkdocs-material" },
+    { name = "mkdocs-section-index" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0,<2.0" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "ruff", specifier = ">=0.6" },
+    { name = "strands-agents", extras = ["gemini"], specifier = ">=1.0" },
 ]
 
 [[package]]
