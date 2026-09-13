@@ -7,4 +7,4 @@ research, import from :mod:`agentic_ml.estimators` with the ``research`` extra i
 
 from importlib.metadata import version
 
-__version__ = version("agentic-ml")
+__version__ = version("jcaste05-agentic-ml")
