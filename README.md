@@ -26,11 +26,11 @@ lightweight, production-ready model.
 ## Installation
 
 ```bash
-uv add agentic-ml              # base install: the light production model only
-uv add "agentic-ml[research]"  # adds Strands, the agent runtime that drives research
+uv add jcaste05-agentic-ml              # base install: the light production model only
+uv add "jcaste05-agentic-ml[research]"  # adds Strands, the agent runtime that drives research
 ```
 
-`agentic-ml[research]` installs `strands-agents` itself but **not** a specific LLM provider.
+`jcaste05-agentic-ml[research]` installs `strands-agents` itself but **not** a specific LLM provider.
 Strands ships each provider as its own extra, so add whichever one matches your setup, e.g.:
 
 ```bash
