@@ -1,0 +1,37 @@
+name: Docs
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Build docs
+        run: uv run mkdocs build --strict
+
+      # Publishes into the jcaste05/docs hub repo, one subfolder per library.
+      - name: Deploy to docs hub
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          external_repository: jcaste05/docs
+          publish_branch: gh-pages
+          publish_dir: ./site
+          destination_dir: agentic-ml
+          keep_files: true
+          personal_token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"

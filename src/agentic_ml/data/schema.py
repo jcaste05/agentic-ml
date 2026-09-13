@@ -14,10 +14,21 @@ import pandas as pd
 
 @dataclass
 class DatasetSchema:
-    """User-provided description of a dataset.
+    """User-provided description of a dataset, driving both validation and prompting.
 
-    ``variables`` maps a column name to a natural-language description. ``target`` is the name
-    of the column to predict.
+    A schema is the only thing a user must supply about their data beyond the dataframe
+    itself. It is used to check the data has the expected columns (:meth:`validate`), to
+    compute the aggregate, LLM-safe profile shown to the agent (:meth:`profile` and
+    :meth:`describe_for_prompt`), and to split the dataframe into features/target inside
+    :func:`~agentic_ml.core.engine.setup_research`.
+
+    Attributes:
+        variables: Maps each column name to a short, natural-language description (e.g.
+            ``{"age": "customer age in years"}``). Columns present in the data but missing
+            here are still profiled, just without a human description; keys that are *not*
+            present in the data make :meth:`validate` raise a :class:`ValueError`.
+        target: The name of the column to predict. Every other column is treated as a
+            feature by :meth:`feature_names`.
     """
 
     variables: dict[str, str]

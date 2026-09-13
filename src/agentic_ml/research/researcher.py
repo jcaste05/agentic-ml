@@ -35,7 +35,20 @@ logger = logging.getLogger(__name__)
 
 
 class Researcher:
-    """Run agent-driven research for a given task and export the best model."""
+    """Run agent-driven research for a given task and export the best model.
+
+    Attributes:
+        task: The :class:`~agentic_ml.core.task.Task` defining the problem being solved
+            (prompt sections, metrics, partitioning and evaluation scheme).
+        model: The Strands model instance driving the agent, or ``None`` if this researcher
+            was built without one — in that case :meth:`research` raises a
+            :class:`ValueError` as soon as it is called.
+        agent: The Strands agent built from ``task``/``model``, created lazily the first time
+            :meth:`research` runs; ``None`` before that.
+        context: The :class:`~agentic_ml.core.engine.ResearchContext` from the last
+            :meth:`research` call; raises :class:`RuntimeError` if accessed before ``research``
+            has run.
+    """
 
     def __init__(self, task: Task, model: object | None = None) -> None:
         self.task = task
@@ -45,6 +58,7 @@ class Researcher:
 
     @property
     def context(self) -> ResearchContext:
+        """The :class:`~agentic_ml.core.engine.ResearchContext` from the last research run."""
         if self._ctx is None:
             raise RuntimeError("no research has been run yet; call research(...) first")
         return self._ctx

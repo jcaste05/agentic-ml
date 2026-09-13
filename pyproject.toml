@@ -44,7 +44,13 @@ dev = [
     "ruff>=0.6",
     "ipykernel",
     "python-dotenv>=1.0",
-    "strands-agents[gemini]>=1.0"
+    "strands-agents[gemini]>=1.0",
+    "mkdocs-material",
+    "mkdocstrings[python]>=1.0,<2.0",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-section-index",
+    "mkdocs-jupyter",
 ]
 
 [tool.hatch.build.targets.wheel]

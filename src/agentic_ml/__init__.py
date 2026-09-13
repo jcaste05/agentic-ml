@@ -5,8 +5,6 @@ The base import intentionally stays light (no LLM / Strands dependency) so that 
 research, import from :mod:`agentic_ml.estimators` with the ``research`` extra installed.
 """
 
-from agentic_ml.core.model import AgenticModel
+from importlib.metadata import version
 
-__version__ = "0.1.0"
-
-__all__ = ["AgenticModel", "__version__"]
+__version__ = version("agentic-ml")

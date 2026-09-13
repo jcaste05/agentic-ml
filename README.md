@@ -1,5 +1,7 @@
 # agentic-ml
 
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://jcaste05.github.io/docs/agentic-ml/)
+
 An agentic framework that tackles a data scientist's machine learning problems with LLM
 agents. Instead of a fixed AutoML search space, an agent **writes and runs real training
 code** in an experimentation loop, keeps an auditable record of every trial, and exports a
@@ -188,6 +190,12 @@ uv sync --all-extras
 uv run ruff check .
 uv run ruff format . --check --diff
 uv run pytest
+```
+
+To preview the documentation locally:
+
+```bash
+uv run mkdocs serve
 ```
 
 ## License

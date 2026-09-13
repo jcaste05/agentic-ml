@@ -48,7 +48,31 @@ class ResearchConfig:
 
 @dataclass
 class ResearchContext:
-    """Mutable state shared between the researcher, the tools and the actions."""
+    """Mutable state shared between the researcher, the tools and the actions.
+
+    Built once by :func:`setup_research` at the start of a run, then threaded through every
+    tool call (:mod:`agentic_ml.research.tools`) and action in this module. Holding no LLM
+    library reference is what keeps the actions unit-testable without Strands.
+
+    Attributes:
+        workspace: On-disk layout of the run (trial folders, dataset, leaderboard, run
+            metadata); see :class:`~agentic_ml.core.workspace.Workspace`.
+        task: The :class:`~agentic_ml.core.task.Task` being solved (partitioning, evaluation
+            scheme and prompt sections).
+        x_data: Feature columns only (target excluded), split out by :func:`setup_research`
+            using ``schema``.
+        y_data: The target column, row-aligned with ``x_data``.
+        schema: The original :class:`~agentic_ml.data.schema.DatasetSchema`, kept so tools can
+            re-describe the data to the agent.
+        config: The :class:`ResearchConfig` for this run (metrics, splits, budget, etc.).
+        leaderboard: The :class:`~agentic_ml.core.leaderboard.Leaderboard` where every trial's
+            result is appended.
+        profile_text: The aggregate, LLM-safe description of the dataset shown at kickoff (see
+            :meth:`~agentic_ml.data.schema.DatasetSchema.describe_for_prompt`).
+        history: Every trial summary recorded so far in this process (id, status, metrics,
+            runtime, description). Kept in memory only — unlike ``leaderboard``, it is not
+            persisted to disk and is lost if the process restarts.
+    """
 
     workspace: Workspace
     task: Task

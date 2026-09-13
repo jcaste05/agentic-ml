@@ -40,7 +40,18 @@ class TabularRegressionTask(Task):
 
 
 class TabularRegressionResearcher(Researcher):
-    """A :class:`~agentic_ml.research.researcher.Researcher` preset for tabular regression."""
+    """A :class:`~agentic_ml.research.researcher.Researcher` preset for tabular regression.
+
+    Pins ``task`` to a fresh :class:`TabularRegressionTask` so callers only need to supply the
+    Strands ``model``. Every attribute otherwise comes straight from the base
+    :class:`~agentic_ml.research.researcher.Researcher`:
+
+    Attributes:
+        task: Always a new :class:`TabularRegressionTask` instance (fixed, not user-provided).
+        model: The Strands model instance driving the agent, or ``None`` if not yet provided.
+        agent: The Strands agent built the first time :meth:`~agentic_ml.research.researcher.
+            Researcher.research` runs; ``None`` before that.
+    """
 
     def __init__(self, model: object | None = None) -> None:
         super().__init__(TabularRegressionTask(), model=model)
