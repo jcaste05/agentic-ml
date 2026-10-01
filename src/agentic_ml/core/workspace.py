@@ -6,6 +6,7 @@ A research directory looks like::
         run.json            # run configuration (for reproducibility)
         leaderboard.csv     # metric table, the audit of every trial
         _dataset.joblib     # the research dataset, saved once
+        session/            # Strands SnapshotSessionManager state (conversation history)
         trial_1/
             model.py
             helpers.py      # optional
@@ -45,6 +46,10 @@ class Workspace:
     @property
     def dataset_path(self) -> Path:
         return self.root / "_dataset.joblib"
+
+    @property
+    def session_dir(self) -> Path:
+        return self.root / "session"
 
     def save_dataset(self, x_data: pd.DataFrame, y_data: pd.Series) -> None:
         """Persist the research dataset once so trials can reload it in the subprocess."""

@@ -20,6 +20,7 @@ from agentic_ml.data.schema import DatasetSchema
 
 if TYPE_CHECKING:
     from agentic_ml.core.task import Task
+    from agentic_ml.research.agent import AgentConfig
 
 Partition = tuple[list[int], list[int]]
 
@@ -72,6 +73,8 @@ class ResearchContext:
         history: Every trial summary recorded so far in this process (id, status, metrics,
             runtime, description). Kept in memory only — unlike ``leaderboard``, it is not
             persisted to disk and is lost if the process restarts.
+        agent_config: The :class:`~agentic_ml.research.agent.AgentConfig` tuning the Strands
+            agent's conversation manager and context offloader for this run.
     """
 
     workspace: Workspace
@@ -81,6 +84,7 @@ class ResearchContext:
     schema: DatasetSchema
     config: ResearchConfig
     leaderboard: Leaderboard
+    agent_config: AgentConfig
     profile_text: str = ""
     history: list[dict] = field(default_factory=list)
 
@@ -91,8 +95,15 @@ def setup_research(
     schema: DatasetSchema,
     config: ResearchConfig,
     research_dir: str,
+    agent_config: AgentConfig | None = None,
 ) -> ResearchContext:
-    """Create the workspace, persist the dataset and build a :class:`ResearchContext`."""
+    """Create the workspace, persist the dataset and build a :class:`ResearchContext`.
+
+    ``agent_config`` defaults to ``AgentConfig()`` (all field defaults) when not passed.
+    """
+    from agentic_ml.research.agent import AgentConfig as _AgentConfig
+
+    agent_config = agent_config or _AgentConfig()
     schema.validate(data)
     x_data = data[schema.feature_names(data)].copy()
     y_data = data[schema.target].copy()
@@ -126,6 +137,7 @@ def setup_research(
         schema=schema,
         config=config,
         leaderboard=leaderboard,
+        agent_config=agent_config,
         profile_text=profile_text,
     )
 
@@ -136,7 +148,27 @@ def create_trial_action(
     model_py: str,
     helpers_py: str = "",
 ) -> dict:
-    """Write a new trial, evaluate it with the task's fixed scheme and record the result."""
+    """Write a new trial, evaluate it with the task's fixed scheme and record the result.
+
+    Refuses to create a trial once ``len(ctx.history)`` already reached ``ctx.config.iterations``
+    — a hard cap enforced here, not just suggested to the agent via the kickoff prompt. Runs the
+    trial before checking the cap, so a rejected call never happens: the trial that reaches the
+    budget still gets created/evaluated normally; ``iterations_remaining``/``budget_note`` in the
+    returned dict (never ``error``, which is reserved for real evaluation failures) tell the agent
+    when it's time to call ``finish_research`` instead of proposing another trial.
+    """
+    if len(ctx.history) >= ctx.config.iterations:
+        return {
+            "trial_id": None,
+            "status": "budget_exhausted",
+            "metrics": {},
+            "runtime": 0.0,
+            "roundtrip_ok": False,
+            "error": None,
+            "iterations_remaining": 0,
+            "budget_note": "Iteration budget is spent; call finish_research now instead of creating more trials.",
+        }
+
     trial_id = ctx.workspace.next_trial_id()
     ctx.workspace.write_trial(trial_id, model_py, helpers_py)
     if description:
@@ -159,6 +191,12 @@ def create_trial_action(
         "error": result.error,
     }
     ctx.history.append({**summary, "description": sanitized_description})
+
+    remaining = ctx.config.iterations - len(ctx.history)
+    summary["iterations_remaining"] = max(remaining, 0)
+    if remaining <= 0:
+        summary["budget_note"] = "Iteration budget is now spent; call finish_research now."
+
     if ctx.config.sleep > 0:
         time.sleep(ctx.config.sleep)
     return summary

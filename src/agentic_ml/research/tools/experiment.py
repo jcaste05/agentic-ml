@@ -25,8 +25,10 @@ def make_create_trial(ctx: ResearchContext):
             helpers_py: Optional source of a `helpers.py` module imported by `model.py`.
 
         Returns:
-            A dict with the trial id, status ("ok"/"failed"), the metrics, the evaluation
-            runtime, whether the save/load roundtrip passed, and any error message.
+            A dict with the trial id, status ("ok"/"failed"/"budget_exhausted"), the metrics,
+            the evaluation runtime, whether the save/load roundtrip passed, any error message,
+            and how many trials remain (``iterations_remaining``) — with a ``budget_note``
+            telling you to call `finish_research` once that reaches 0.
         """
         return create_trial_action(ctx, description, model_py, helpers_py)
 

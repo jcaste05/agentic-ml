@@ -11,10 +11,12 @@ extra. Only actually running :meth:`research` does.
 
 from __future__ import annotations
 
-import json
+import asyncio
 import logging
+from collections.abc import Coroutine
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
-from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -29,9 +31,25 @@ from agentic_ml.core.model import AgenticModel
 from agentic_ml.core.task import Task
 from agentic_ml.data.schema import DatasetSchema
 
-SNAPSHOT_FILENAME = "snapshot.json"
+if TYPE_CHECKING:
+    from agentic_ml.research.agent import AgentConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _run_async(coro: Coroutine[Any, Any, Any]) -> Any:
+    """Run ``coro`` to completion, even if called from an already-running event loop.
+
+    Notebook kernels (Jupyter/IPython) run their own event loop, so a plain ``asyncio.run()``
+    fails with "cannot be called from a running event loop". When that happens, run the
+    coroutine on a separate thread with its own loop instead.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coro).result()
 
 
 class Researcher:
@@ -74,31 +92,39 @@ class Researcher:
             self.agent(build_kickoff_prompt(config))
         except EventLoopException as e:
             # Raised by Strands when the LLM provider call itself fails (e.g. a 500 from
-            # the API); returned instead of raised so the session can still be saved.
+            # the API); returned instead of raised so the caller sees a clearer error.
             return RuntimeError(
                 f"the LLM provider API failed with: {e.original_exception!r}. "
                 "Check the provider's status or retry."
             )
         return None
 
-    def _save_session(self, research_dir: str) -> str:
-        snapshot = self.agent.take_snapshot(preset="session")
-        snapshot_path = Path(research_dir) / SNAPSHOT_FILENAME
-        snapshot_path.write_text(json.dumps(snapshot.to_dict()))
-        return str(snapshot_path)
+    def _load_session(self, new_session: bool) -> None:
+        """Ensure ``self.agent`` is always rebuilt fresh against ``self._ctx`` for this call.
 
-    def _load_session(self, research_dir: str, new_session: bool) -> str:
-        from strands import Snapshot
+        Rebuilding from scratch (rather than reusing ``self.agent`` in-memory, even if one
+        already exists on this instance) means the agent's tools always close over the current
+        call's ``ResearchContext`` — with its own reset iteration budget — instead of the stale
+        context from a previous call.
 
-        from agentic_ml.research.agent import build_research_agent
+        - ``new_session=True``: clears the on-disk session cache first, so the new agent starts
+          with an empty conversation.
+        - ``new_session=False``: leaves the on-disk session cache alone. ``SnapshotSessionManager``
+          persists every turn automatically, so the new agent's conversation is restored from
+          that snapshot — whether it was written by an agent still alive on this instance or by
+          an earlier process that has since restarted.
+        """
+        from agentic_ml.research.agent import build_research_agent, build_session_manager
 
-        self.agent = build_research_agent(self._ctx, self.model)
-        snapshot_path = Path(research_dir) / SNAPSHOT_FILENAME
-        if not new_session:
-            snapshot = Snapshot.from_dict(json.loads(snapshot_path.read_text()))
-            self.agent.load_snapshot(snapshot)
-            return str(snapshot_path)
-        return None
+        session_manager = build_session_manager(self._ctx)
+        if new_session:
+            _run_async(session_manager.delete_session())
+            logger.info("Cleared previous session cache; starting a new research agent.")
+        else:
+            logger.info(
+                "Restoring research agent session from: %s", self._ctx.workspace.session_dir
+            )
+        self.agent = build_research_agent(self._ctx, self.model, session_manager)
 
     # ----------- Public Methods -----------
 
@@ -118,6 +144,7 @@ class Researcher:
         research_dir: str | None = None,
         sleep: float = 0.0,
         new_session: bool = True,
+        agent_config: AgentConfig | None = None,
     ) -> ResearchContext:
         """Drive the research loop and return the resulting context.
 
@@ -127,20 +154,34 @@ class Researcher:
             metrics: Metric names to track; defaults to the task's metrics.
             partitions: Optional explicit (train_idx, val_idx) splits; otherwise built by the
                 task (K-Fold by default).
-            iterations: Soft budget of experiment iterations offered to the agent.
+            iterations: Hard cap on the number of trials ``create_trial`` will actually create,
+                enforced by ``create_trial_action`` (not just suggested to the agent via the
+                kickoff prompt, which also mentions this number so the agent can plan ahead).
             ideas: Natural-language ideas the user wants the agent to try.
             research_dir: Where to store trials and the leaderboard. Defaults to a
                 timestamped directory under ``./agentic_ml_runs``.
             sleep: How long to wait between iterations, in seconds. This is useful
                 to avoid RateLimit errors with the LLM provider.
-            new_session: Whether to start a new research session or continue from an
-                existing one.
+            new_session: If ``True``, clears any previous session cache under ``research_dir``
+                and starts a brand-new agent. If ``False``, rebuilds the agent from scratch
+                against this call's fresh context but restores its conversation from the
+                on-disk session cache (whether written by an agent still alive on this instance
+                or by an earlier process that has since restarted). Only meaningful when
+                calling :meth:`research` again with the *same* ``research_dir`` as a previous
+                call.
+            agent_config: Tunes the Strands agent's conversation manager and context offloader
+                (see :class:`~agentic_ml.research.agent.AgentConfig`); defaults to
+                ``AgentConfig()`` (all field defaults) when not passed.
         """
         if self.model is None:
             raise ValueError(
                 "a Strands model instance is required to run research; pass one via "
                 "Researcher(model=...) (install the 'research' extra)"
             )
+
+        from agentic_ml.research.agent import AgentConfig as _AgentConfig
+
+        agent_config = agent_config or _AgentConfig()
 
         chosen_metrics = metrics or self.task.default_metrics()
         primary = self.task.primary_metric()
@@ -165,14 +206,11 @@ class Researcher:
             stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
             research_dir = f"./agentic_ml_runs/{self.task.name}_{stamp}"
 
-        ctx = setup_research(self.task, data, schema, config, research_dir)
+        ctx = setup_research(self.task, data, schema, config, research_dir, agent_config)
         self._ctx = ctx
 
-        snapshot_load_path = self._load_session(research_dir, new_session)
-        logger.info("Research session snapshot loaded from: %s", snapshot_load_path)
+        self._load_session(new_session)
         error = self._kickoff_research_agent(config)
-        snapshot_save_path = self._save_session(research_dir)
-        logger.info("Research session snapshot saved at: %s", snapshot_save_path)
         if error is not None:
             raise error
 
