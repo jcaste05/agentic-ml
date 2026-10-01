@@ -45,7 +45,10 @@ dev = [
     "ruff>=0.6",
     "ipykernel",
     "python-dotenv>=1.0",
-    "strands-agents[gemini]>=1.0",
+    "strands-agents[gemini]>=1.0",  # Google AI Studio provider
+    "strands-agents[openai]>=1.0",  # OpenAI or Groq providers
+    "pip-system-certs",  # Use system SSL certificates
+    "strands-xai",  # X provider (grok)
     "mkdocs-material",
     "mkdocstrings[python]>=1.0,<2.0",
     "mkdocs-gen-files",

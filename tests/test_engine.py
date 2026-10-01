@@ -16,7 +16,7 @@ from agentic_ml.estimators.regression.tabular import TabularRegressionTask
 from tests.conftest import RAISING_MODEL_PY, VALID_MODEL_PY
 
 
-def _config() -> ResearchConfig:
+def _config(iterations: int = 10) -> ResearchConfig:
     task = TabularRegressionTask()
     return ResearchConfig(
         metrics=task.default_metrics(),
@@ -24,6 +24,7 @@ def _config() -> ResearchConfig:
         maximize=task.maximize(),
         n_splits=3,
         timeout=120,
+        iterations=iterations,
     )
 
 
@@ -71,3 +72,36 @@ def test_leaderboard_file_has_expected_columns(tmp_path, regression_data, regres
 
     frame = ctx.leaderboard.read()
     assert list(frame.columns) == ["ID", "Status", "rmse", "mae", "r2", "runtime", "description"]
+
+
+def test_create_trial_refuses_once_iteration_budget_is_spent(
+    tmp_path, regression_data, regression_schema
+):
+    task = TabularRegressionTask()
+    config = _config(iterations=2)
+    ctx = setup_research(task, regression_data, regression_schema, config, str(tmp_path / "run"))
+
+    trial_1 = create_trial_action(ctx, "trial 1", VALID_MODEL_PY)
+    last = create_trial_action(ctx, "trial 2", VALID_MODEL_PY)
+    rejected = create_trial_action(ctx, "trial 3", VALID_MODEL_PY)
+
+    assert trial_1["status"] == "ok"
+    assert not trial_1["error"]
+    assert trial_1["iterations_remaining"] == 1
+    assert "budget_note" not in trial_1
+
+    # The trial that reaches the budget still runs normally; the reminder goes in a dedicated
+    # field, not "error", so the agent doesn't waste a call proposing another one.
+    assert last["status"] == "ok"
+    assert last["trial_id"] == "trial_2"
+    assert not last["error"]
+    assert last["iterations_remaining"] == 0
+    assert "finish_research" in last["budget_note"]
+
+    assert rejected["status"] == "budget_exhausted"
+    assert rejected["trial_id"] is None
+    assert rejected["iterations_remaining"] == 0
+    assert "finish_research" in rejected["budget_note"]
+    assert len(ctx.history) == 2
+    assert not ctx.workspace.trial_dir("trial_3").exists()
+    assert "trial_3" not in ctx.leaderboard.read()["ID"].tolist()

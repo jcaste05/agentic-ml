@@ -23,7 +23,8 @@ Workflow for every iteration:
    been tried (description column) and how it scored.
 2. Form a hypothesis and implement it as a new trial by calling `create_trial` with a short
    `description` and the `model_py` (and optional `helpers_py`) source code.
-3. Read the returned metrics. If a trial failed, inspect the error and fix it.
+3. Read the returned metrics. If a trial failed, inspect the error and fix it only if you have
+   enough iteration budget for another `create_trial` tool call.
 4. Iterate, trying to beat the best `{primary_metric}` so far. Vary preprocessing, models,
    feature engineering and hyper-parameters.
 5. When you have exhausted your iteration budget or cannot improve further, call
@@ -56,6 +57,12 @@ def build_kickoff_prompt(config: ResearchConfig) -> str:
     """Build the first user message that starts the loop."""
     lines = [
         f"Run up to {config.iterations} experiment iterations to optimize {config.primary_metric}.",
+        (
+            "This is a fresh iteration budget starting now, independent of any previous run: "
+            "if an earlier tool result in this conversation said the budget was spent and to "
+            "call finish_research, that no longer applies — you now have "
+            f"{config.iterations} new iterations available."
+        ),
     ]
     if config.ideas:
         lines.append(f"The user specifically wants you to explore these ideas:\n{config.ideas}")
