@@ -166,7 +166,7 @@ def create_trial_action(
             "roundtrip_ok": False,
             "error": None,
             "iterations_remaining": 0,
-            "budget_note": "Iteration budget is spent; call finish_research now instead of creating more trials.",
+            "budget_note": "Iteration budget is spent; call finish_research now.",
         }
 
     trial_id = ctx.workspace.next_trial_id()

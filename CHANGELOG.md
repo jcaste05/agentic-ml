@@ -2,6 +2,30 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## `[0.2.0]` - 2026-10-01
+Agent improvements and configuration enhancements
+### Added
+- `AgentConfig` class in `core/engine.py`: allows fine-grained control over agent behavior and resource consumption.
+  - Token budget management with visibility after each trial to prevent hallucination.
+  - Parameters for operating with small models, aggressive token rate limits, or high-performance paid LLMs.
+  - Conservative defaults optimized for minimal token consumption.
+- `SummarizingConversationManager` integration in agent loop for improved conversation context management and history compression.
+- `ContextOffloader` plugin to handle large context efficiently across long research sessions.
+- Session manager that persists conversation snapshots in the research directory for better session recovery.
+- GroqCloud as an additional LLM provider option in `docs/quick_example.ipynb`.
+- Demonstration of `AgentConfig` usage in quick example notebook for both resource-constrained and high-performance scenarios.
+
+### Changed
+- Agent initialization now accepts `AgentConfig` to customize behavior per research session.
+- Budget tracking is now visible to the agent after each trial evaluation, providing clear token consumption feedback.
+- Research session management improved with persistent snapshots and context offloading for long-running experiments.
+- Updated `docs/quick_example.ipynb` with comprehensive examples of agent configuration and provider selection.
+
+### Improved
+- Agent resilience with better context management and conversation history handling.
+- Token efficiency through configurable compression and context offloading.
+
+
 ## `[0.1.1]` - 2026-09-13
 Update README.md
 ### Changed

@@ -69,7 +69,9 @@ def _log_token_usage(event: AfterModelCallEvent) -> None:
         usage.get("outputTokens", 0),
         usage.get("totalTokens", 0),
     )
-    logger.debug(f"agent.messages after call ({len(event.agent.messages)} total): {event.agent.messages}")
+    logger.debug(
+        f"agent.messages after call ({len(event.agent.messages)} total): {event.agent.messages}"
+    )
 
 
 def build_research_agent(ctx: ResearchContext, model: object, session_manager: object):
